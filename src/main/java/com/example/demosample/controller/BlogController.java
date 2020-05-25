@@ -8,6 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -34,8 +35,9 @@ public class BlogController {
     }
 
     @PostMapping("/blog")
-    public String process(@Valid Blog blog, BindingResult result, RedirectAttributes redirectAttributes){
+    public String process(@Valid Blog blog, BindingResult result, RedirectAttributes redirectAttributes,Model model){
         if(result.hasErrors()){
+            model.addAttribute("authors",authorService.findAll());
             return "admin/blogForm";
         }
 
@@ -44,11 +46,43 @@ public class BlogController {
         return "redirect:/blogs";
     }
 
+    @GetMapping("/blog/{id}")
+    public String showBlogDetails(@PathVariable int id, Model model){
+        model.addAttribute("blog",blogService.findById(id));
+        return "admin/blog";
+    }
+
     @GetMapping("/blogs")
     public String showAllBlogs(Model model){
         model.addAttribute("blogs",blogService.findAll());
         model.addAttribute("success",model.containsAttribute("success"));
+        model.addAttribute("delete",model.containsAttribute("delete"));
+        model.addAttribute("update",model.containsAttribute("update"));
         return "admin/blogs";
+    }
+
+    @GetMapping("/blog/delete/{id}")
+    public String deleteBlog(@PathVariable int id,Model model,RedirectAttributes attributes){
+        blogService.deleteById(id);
+        model.addAttribute("blogs",blogService.findAll());
+        attributes.addFlashAttribute("delete",true);
+
+        return "redirect:/blogs";
+    }
+
+    @GetMapping("/blog/update/{id}")
+    public String updateBlog(@PathVariable int id,Model model){
+        model.addAttribute("blog",blogService.findById(id));
+        model.addAttribute("authors",authorService.findAll());
+        this.bid = id;
+        return "admin/updateForm";
+    }
+    int bid;
+    @PostMapping("/blog/update")
+    public String processUpdate(Blog blog,RedirectAttributes redirectAttributes){
+        blogService.update(bid,blog);
+        redirectAttributes.addFlashAttribute("update",true);
+        return "redirect:/blogs";
     }
 
     @ModelAttribute(name = "categories")
